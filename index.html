@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌦️ Weather App</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 400px; margin: 20px auto; text-align: center; background: #f0f8ff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input { padding: 10px; width: 70%; border: 1px solid #ccc; border-radius: 5px; }
+    button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .weather-result { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; min-height: 150px; }
+    .weather-icon { width: 80px; height: 80px; }
+    .error { color: red; }
+    .loading { color: #555; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>🌍 Get Weather</h1>
+  <input id="city" type="text" placeholder="Enter city name (e.g., Lagos, London)">
+  <button onclick="fetchWeather()">Get Weather</button>
+  <div id="weatherResult" class="weather-result">
+    <!-- Weather data will appear here -->
+  </div>
+
+  <script>
+    // ⚠️ TODO: Move this API key to a secure backend server!
+    const apiKey = '4c896a981ed5b45c1ea6e2293cc8475a';
+    const weatherResult = document.getElementById('weatherResult');
+
+    async function fetchWeather() {
+      const city = document.getElementById('city').value.trim();
+      console.log('🔍 Fetching weather for:', city);
+
+      if (!city) {
+        showError('Please enter a city name 😅');
+        return;
+      }
+
+      // Show loading state
+      weatherResult.innerHTML = `<p class="loading">Loading weather for ${city}...</p>`;
+
+      // FIXED API URL
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;                                                                                                      
+      console.log('🌐 API URL:', url);
+
+      try {
+        const response = await fetch(url);
+        console.log('📡 Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Data received:', data);
+
+        if (data.cod === 200) {
+          showWeather(data);
+        } else {
+          showError(data.message || 'City not found 😬');
+        }
+      } catch (err) {
+        if (err.message.includes('404')) {
+          showError('City not found. Try another name 🌍');
+        } else if (err.message.includes('401')) {
+          showError('API key issue 🚫. Check if it’s valid.');
+        } else {
+          showError('Error fetching data 🚨. Try again later.');
+        }
+        console.error('❌ Error:', err);
+      }
+    }
+
+    function showWeather(data) {
+      const { name, main, weather, wind } = data;
+      const temp = main.temp;
+      const feelsLike = main.feels_like;
+      const description = weather[0].description;
+      const icon = `https://openweathermap.org/img/wn/${weather[0].icon}@2x.png`;
+      const windSpeed = wind.speed;
+
+      weatherResult.innerHTML = `
+        <h2>${name}</h2>
+        <img src="${icon}" alt="weather icon" class="weather-icon">
+        <p><strong>${temp}°C</strong> (feels like ${feelsLike}°C)</p>
+        <p>${description}</p>
+        <p>Wind: ${windSpeed} m/s</p>
+      `;
+    }
+
+    function showError(msg) {
+      weatherResult.innerHTML = `<p class="error">${msg}</p>`;
+    }
+  </script>
+</body>
+</html>
